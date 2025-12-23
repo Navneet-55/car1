@@ -20,6 +20,7 @@ class RacingGame {
     private var particleSystem: ParticleSystem?
     private var track: Track?
     private var hudManager: HUDManager?
+    private var aneManager: NeuralEngineManager
     
     // Race systems
     private var drsSystem: DRSSystem
@@ -44,6 +45,9 @@ class RacingGame {
         // Initialize race systems
         self.drsSystem = DRSSystem()
         self.pitStopSystem = PitStopSystem()
+        
+        // Initialize Neural Engine manager
+        self.aneManager = NeuralEngineManager.shared
         
         setupGame()
     }
@@ -95,8 +99,8 @@ class RacingGame {
         isLapActive = true
     }
     
-    /// Update game logic
-    func update(deltaTime: Float) {
+    /// Update game logic with dynamic tick rates for Low Battery Mode
+    func update(deltaTime: Float, updateAI: Bool = true, updateParticles: Bool = true) {
         guard let playerCar = playerCar else { return }
         
         let input = inputManager.getCarInput()
@@ -138,6 +142,10 @@ class RacingGame {
         
         // Update camera with enhanced data (TPP only)
         let updatedCarState = playerCar.getPhysicsState()
+        
+        // Use ANE for predictive camera smoothing (optional, async, non-blocking)
+        // For now, camera uses standard interpolation
+        // ANE smoothing can be added later as an enhancement
         camera.update(
             targetPosition: updatedCarState.position,
             targetRotation: updatedCarState.rotation,
@@ -150,10 +158,21 @@ class RacingGame {
         // Update HUD
         updateHUD(speed: speed, carState: updatedCarState)
         
-        // Update AI cars
-        for aiCar in aiCars {
-            let aiInput = generateAIInput(for: aiCar)
-            aiCar.update(input: aiInput, physicsEngine: physicsEngine)
+        // Update AI cars (throttled in Low Battery Mode)
+        if updateAI {
+            for aiCar in aiCars {
+                // Use ANE for AI decision optimization (optional, async, non-blocking)
+                // For now, use CPU fallback directly to avoid async complexity
+                // ANE optimization can be added later as an enhancement
+                let aiInput = generateAIInput(for: aiCar)
+                aiCar.update(input: aiInput, physicsEngine: physicsEngine)
+            }
+        }
+        
+        // Update particles (throttled in Low Battery Mode)
+        if updateParticles, let particleSystem = particleSystem {
+            // Particle updates would go here
+            // For now, particles are updated elsewhere
         }
         
         // Update lap time

@@ -28,7 +28,8 @@ struct ContentView: View {
                 drsState: hudManager.drsState,
                 tireCompound: hudManager.tireCompound,
                 tireWear: hudManager.tireWear,
-                isPitLimiterActive: hudManager.isPitLimiterActive
+                isPitLimiterActive: hudManager.isPitLimiterActive,
+                isLowBatteryModeActive: Settings.shared.isLowBatteryMode
             )
             
             // Debug UI overlay

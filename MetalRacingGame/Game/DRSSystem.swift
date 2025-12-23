@@ -221,5 +221,10 @@ class DRSSystem {
     func getZones() -> [DRSZone] {
         return zones
     }
+    
+    /// Check if currently in a DRS zone (for ANE integration)
+    func isDRSZoneActive() -> Bool {
+        return currentZone != nil && (state == .available || state == .active)
+    }
 }
 

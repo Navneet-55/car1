@@ -109,14 +109,37 @@ class MetalEngine {
             frameTimeHistory.removeFirst()
         }
         
-        // Update input
+        // Record frame time for power manager
+        PowerManager.shared.recordFrameTime(deltaTime)
+        
+        // Update input (latency-critical, on main thread)
         inputManager.update()
         
-        // Update physics
-        physicsEngine.update(deltaTime: Float(deltaTime))
+        // Check Low Battery Mode
+        let isLowBatteryMode = Settings.shared.isLowBatteryMode
+        let updateAI = !isLowBatteryMode || (frameCount % 2 == 0) // Update AI every other frame in low battery
+        let updateParticles = !isLowBatteryMode || (frameCount % 4 == 0) // Update particles every 4 frames
         
-        // Update game logic
-        racingGame?.update(deltaTime: Float(deltaTime))
+        // Update physics (dedicated thread pool)
+        JobSystem.shared.scheduleJob(on: .physics) { [weak self] in
+            self?.physicsEngine.update(deltaTime: Float(deltaTime))
+        }
+        
+        // Update game logic (efficiency pool in low battery mode, performance pool otherwise)
+        JobSystem.shared.scheduleJob(on: isLowBatteryMode ? .efficiency : .renderSubmission) { [weak self] in
+            self?.racingGame?.update(deltaTime: Float(deltaTime), updateAI: updateAI, updateParticles: updateParticles)
+        }
+        
+        // Adaptive quality adjustment based on power/thermal state
+        let qualityScale = PowerManager.shared.getRecommendedQualityScaling()
+        if qualityScale < 1.0 {
+            // Adjust render quality (would be passed to renderer)
+            // For now, we adjust ray tracing quality
+            if let rayTracingRenderer = rayTracingRenderer {
+                let currentFPS = getFPS()
+                rayTracingRenderer.adjustQuality(targetFPS: 60.0, currentFPS: currentFPS)
+            }
+        }
     }
     
     /// Render frame (called from MTKViewDelegate)

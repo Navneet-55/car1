@@ -59,6 +59,7 @@ struct RacingHUD: View {
     let tireCompound: String
     let tireWear: Float // 0-100
     let isPitLimiterActive: Bool
+    let isLowBatteryModeActive: Bool
     
     var body: some View {
         ZStack {
@@ -78,6 +79,11 @@ struct RacingHUD: View {
                     
                     // DRS indicator
                     DRSIndicator(state: drsState)
+                    
+                    // Low Battery Mode indicator
+                    if isLowBatteryModeActive {
+                        LowBatteryIndicator()
+                    }
                 }
                 .padding(.top, 20)
                 .padding(.horizontal, 20)
@@ -324,6 +330,7 @@ class HUDManager: ObservableObject {
     @Published var tireCompound: String = "MEDIUM"
     @Published var tireWear: Float = 0
     @Published var isPitLimiterActive: Bool = false
+    @Published var isLowBatteryModeActive: Bool = false
     
     func update(speed: Float, gear: Int) {
         self.speed = speed
@@ -358,6 +365,24 @@ class HUDManager: ObservableObject {
     }
 }
 
+/// Low Battery Mode indicator
+struct LowBatteryIndicator: View {
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "battery.25")
+                .foregroundColor(.orange)
+                .font(.system(size: 12))
+            Text("LOW POWER")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundColor(.orange)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.black.opacity(0.6))
+        .cornerRadius(4)
+    }
+}
+
 // Default initializer for backwards compatibility
 extension RacingHUD {
     init(speed: Float, gear: Int, mode: DrivingMode, showLapTimer: Bool, lapTime: TimeInterval?) {
@@ -370,5 +395,6 @@ extension RacingHUD {
         self.tireCompound = "MEDIUM"
         self.tireWear = 0
         self.isPitLimiterActive = false
+        self.isLowBatteryModeActive = false
     }
 }

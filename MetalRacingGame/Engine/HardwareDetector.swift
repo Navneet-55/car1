@@ -112,8 +112,8 @@ class HardwareDetector {
         // Detect hardware tier
         let tier = detectHardwareTier(gpuCoreCount: gpuCoreCount, hasRayTracing: hasRayTracing)
         
-        // Detect Metal 4 capabilities
-        let metal4 = detectMetal4Capabilities()
+        // Detect Metal 4 capabilities (needs tier for frame interpolator check)
+        let metal4 = detectMetal4Capabilities(tier: tier)
         
         capabilities = HardwareCapabilities(
             gpuCoreCount: gpuCoreCount,
@@ -145,7 +145,7 @@ class HardwareDetector {
             } else if deviceName.contains("pro") {
                 return 30 // M4 Pro
             }
-            return 10 // M4 base
+            return 8 // M4 base (8-core GPU)
         } else if deviceName.contains("m3") {
             if deviceName.contains("max") {
                 return 40 // M3 Max
@@ -254,7 +254,7 @@ class HardwareDetector {
     }
     
     /// Detect Metal 4 capabilities with clean fallback paths
-    private func detectMetal4Capabilities() -> Metal4FeatureLayer {
+    private func detectMetal4Capabilities(tier: HardwareCapabilities.HardwareTier) -> Metal4FeatureLayer {
         var hasCompiler = false
         var hasSpatialScaler = false
         var hasTemporalScaler = false
