@@ -8,6 +8,7 @@
 import Metal
 import MetalKit
 import simd
+import QuartzCore
 
 /// Main renderer handling PBR, HDR, and rendering pipeline
 class MetalRenderer {
@@ -39,6 +40,12 @@ class MetalRenderer {
     
     // Track rendering
     private var track: Track?
+    
+    // F1 Car model
+    private var f1Car: F1Car?
+    
+    // Material buffer
+    private var materialBuffer: MTLBuffer?
     
     // Frame data
     private var frameIndex: Int = 0
@@ -73,8 +80,14 @@ class MetalRenderer {
         // Initialize post-processor
         postProcessor = PostProcessor(device: device)
         
-        // Initialize track
-        track = Track(device: device, length: 1000.0)
+        // Initialize track (Silverstone)
+        track = Track(device: device, length: 5891.0) // Silverstone GP length
+        
+        // Initialize F1 car
+        f1Car = F1Car(device: device)
+        
+        // Setup material buffer
+        setupMaterialBuffer()
     }
     
     func setRayTracingRenderer(_ renderer: RayTracingRenderer) {
@@ -145,6 +158,20 @@ class MetalRenderer {
         depthStencilState = device.makeDepthStencilState(descriptor: depthStencilDescriptor)
     }
     
+    private func setupMaterialBuffer() {
+        // Material structure matching shader
+        struct Material {
+            var albedo: SIMD3<Float>
+            var metallic: Float
+            var roughness: Float
+            var ao: Float
+            var materialType: Int32
+        }
+        
+        let materialBufferSize = MemoryLayout<Material>.stride
+        materialBuffer = device.makeBuffer(length: materialBufferSize, options: .storageModeShared)
+    }
+    
     func render(commandBuffer: MTLCommandBuffer, frameIndex: Int, game: RacingGame?) {
         self.frameIndex = frameIndex
         
@@ -172,10 +199,13 @@ class MetalRenderer {
             renderEncoder.setFragmentBuffer(uniformBuffer, offset: uniformOffset, index: 0)
         }
         
-        // Render track
+        // Render track with track material
         if let track = track,
            let trackVertexBuffer = track.getVertexBuffer(),
            let trackIndexBuffer = track.getIndexBuffer() {
+            // Set track material (asphalt)
+            setMaterial(type: 0, albedo: SIMD3<Float>(0.15, 0.15, 0.18), metallic: 0.0, roughness: 0.85, ao: 1.0, renderEncoder: renderEncoder)
+            
             renderEncoder.setVertexBuffer(trackVertexBuffer, offset: 0, index: 1)
             renderEncoder.drawIndexedPrimitives(
                 type: .triangle,
@@ -186,8 +216,10 @@ class MetalRenderer {
             )
         }
         
-        // Render cars
-        if let vertexBuffer = vertexBuffer, let indexBuffer = indexBuffer {
+        // Render F1 cars
+        if let f1Car = f1Car,
+           let carVertexBuffer = f1Car.getVertexBuffer(),
+           let carIndexBuffer = f1Car.getIndexBuffer() {
             if let cars = game?.getAllCars() {
                 for car in cars {
                     let carState = car.getPhysicsState()
@@ -198,7 +230,6 @@ class MetalRenderer {
                     var modelMatrix = float4x4.identity()
                     modelMatrix = float4x4.translation(carPosition) * modelMatrix
                     modelMatrix = float4x4.rotation(quaternion: carRotation) * modelMatrix
-                    modelMatrix = float4x4.scale(SIMD3<Float>(2, 1, 4)) * modelMatrix
                     
                     // Update model matrix in uniforms
                     var uniforms = getCurrentUniforms()
@@ -209,12 +240,16 @@ class MetalRenderer {
                         uniformPointer.pointee = uniforms
                     }
                     
-                    renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 1)
+                    // Set car body material
+                    let materialProps = f1Car.getMaterialProperties()
+                    setMaterial(type: 1, albedo: materialProps.color, metallic: materialProps.metallic, roughness: materialProps.roughness, ao: 1.0, renderEncoder: renderEncoder)
+                    
+                    renderEncoder.setVertexBuffer(carVertexBuffer, offset: 0, index: 1)
                     renderEncoder.drawIndexedPrimitives(
                         type: .triangle,
-                        indexCount: 6,
+                        indexCount: f1Car.getIndexCount(),
                         indexType: .uint16,
-                        indexBuffer: indexBuffer,
+                        indexBuffer: carIndexBuffer,
                         indexBufferOffset: 0
                     )
                 }
@@ -281,6 +316,32 @@ class MetalRenderer {
     
     func getTrack() -> Track? {
         return track
+    }
+    
+    /// Set material properties for rendering
+    private func setMaterial(type: Int32, albedo: SIMD3<Float>, metallic: Float, roughness: Float, ao: Float, renderEncoder: MTLRenderCommandEncoder) {
+        guard let materialBuffer = materialBuffer else { return }
+        
+        struct Material {
+            var albedo: SIMD3<Float>
+            var metallic: Float
+            var roughness: Float
+            var ao: Float
+            var materialType: Int32
+        }
+        
+        var material = Material(
+            albedo: albedo,
+            metallic: metallic,
+            roughness: roughness,
+            ao: ao,
+            materialType: type
+        )
+        
+        let materialPointer = materialBuffer.contents().bindMemory(to: Material.self, capacity: 1)
+        materialPointer.pointee = material
+        
+        renderEncoder.setFragmentBuffer(materialBuffer, offset: 0, index: 1)
     }
 }
 

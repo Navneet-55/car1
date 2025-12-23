@@ -14,8 +14,11 @@ class Car {
     private var input: CarInput = CarInput()
     
     // Car properties
-    var color: SIMD3<Float> = SIMD3<Float>(1, 0, 0) // Red by default
-    var model: String = "default_car"
+    var color: SIMD3<Float> = SIMD3<Float>(0.0, 0.4, 0.8) // Mercedes blue by default
+    var model: String = "f1_car"
+    
+    // Tire color (updated by pit stop system)
+    var tireColor: SIMD3<Float> = SIMD3<Float>(1.0, 0.8, 0.0) // Medium yellow default
     
     init(id: UUID = UUID(), position: SIMD3<Float> = SIMD3<Float>(0, 0, 0)) {
         self.id = id
@@ -55,6 +58,11 @@ class Car {
     /// Get speed in km/h
     func getSpeed() -> Float {
         return physicsState.speed * 3.6 // m/s to km/h
+    }
+    
+    /// Update tire color based on compound
+    func setTireColor(_ color: SIMD3<Float>) {
+        self.tireColor = color
     }
 }
 

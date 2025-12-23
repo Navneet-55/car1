@@ -42,6 +42,21 @@ struct DebugUI: View {
             Text("Hardware: \(performanceMonitor.hardwareInfo)")
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundColor(.white.opacity(0.8))
+            
+            Divider()
+                .background(Color.white.opacity(0.3))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Controls:")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.7))
+                Text("WASD: Drive  |  Space: Brake")
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.6))
+                Text("E: DRS  |  P: Pit  |  T: Change Tires")
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.6))
+            }
         }
         .padding(12)
         .background(Color.black.opacity(0.7))

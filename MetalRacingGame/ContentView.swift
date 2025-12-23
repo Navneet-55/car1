@@ -11,11 +11,25 @@ import AppKit
 
 struct ContentView: View {
     @StateObject private var performanceMonitor = PerformanceMonitor()
+    @StateObject private var hudManager = HUDManager()
     
     var body: some View {
         ZStack {
-            MetalView(performanceMonitor: performanceMonitor)
+            MetalView(performanceMonitor: performanceMonitor, hudManager: hudManager)
                 .frame(minWidth: 1280, minHeight: 720)
+            
+            // HUD overlay with DRS, tires, and pit limiter
+            RacingHUD(
+                speed: hudManager.speed,
+                gear: hudManager.gear,
+                mode: hudManager.mode,
+                showLapTimer: hudManager.showLapTimer,
+                lapTime: hudManager.lapTime,
+                drsState: hudManager.drsState,
+                tireCompound: hudManager.tireCompound,
+                tireWear: hudManager.tireWear,
+                isPitLimiterActive: hudManager.isPitLimiterActive
+            )
             
             // Debug UI overlay
             VStack {
@@ -37,6 +51,7 @@ struct ContentView: View {
 
 struct MetalView: NSViewRepresentable {
     @ObservedObject var performanceMonitor: PerformanceMonitor
+    @ObservedObject var hudManager: HUDManager
     
     func makeNSView(context: Context) -> MTKView {
         let view = MTKView()
@@ -48,6 +63,7 @@ struct MetalView: NSViewRepresentable {
         // Initialize engine
         let engine = MetalEngine.shared
         engine.initialize(metalView: view)
+        engine.setHUDManager(hudManager)
         
         return view
     }
@@ -59,12 +75,14 @@ struct MetalView: NSViewRepresentable {
     func makeCoordinator() -> Coordinator {
         let coordinator = Coordinator()
         coordinator.performanceMonitor = performanceMonitor
+        coordinator.hudManager = hudManager
         return coordinator
     }
     
     class Coordinator: NSObject, MTKViewDelegate {
         private var lastFrameTime: CFTimeInterval = 0
         weak var performanceMonitor: PerformanceMonitor?
+        weak var hudManager: HUDManager?
         
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
             MetalEngine.shared.handleResize(size: size)

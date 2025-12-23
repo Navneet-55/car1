@@ -23,6 +23,7 @@ class MetalEngine {
     private var physicsEngine: PhysicsEngine
     private var inputManager: InputManager
     private var racingGame: RacingGame?
+    private var hudManager: HUDManager?
     
     private var frameCount: UInt64 = 0
     private var lastFrameTime: CFTimeInterval = 0
@@ -70,7 +71,8 @@ class MetalEngine {
             physicsEngine: physicsEngine,
             inputManager: inputManager,
             capabilities: capabilities,
-            track: track
+            track: track,
+            hudManager: hudManager
         )
         
         // Setup MetalFX if available
@@ -79,6 +81,12 @@ class MetalEngine {
         }
         
         print("Rendering initialized")
+    }
+    
+    /// Set HUD manager
+    func setHUDManager(_ manager: HUDManager) {
+        self.hudManager = manager
+        racingGame?.setHUDManager(manager)
     }
     
     /// Main update loop (called from view controller)
