@@ -14,7 +14,11 @@ import QuartzCore
 class MetalRenderer {
     private let device: MTLDevice
     private let capabilities: HardwareCapabilities
+    private let metal4: Metal4FeatureLayer
     private var view: MTKView
+    
+    // Pipeline cache for shader compilation
+    private let pipelineCache: PipelineCache
     
     // Render pipeline state
     private var renderPipelineState: MTLRenderPipelineState?
@@ -50,6 +54,7 @@ class MetalRenderer {
     // Frame data
     private var frameIndex: Int = 0
     private let maxFramesInFlight = 3
+    private var lastFrameTime: CFTimeInterval = 0
     
     // Uniforms
     struct Uniforms {
@@ -66,19 +71,23 @@ class MetalRenderer {
         self.device = device
         self.view = view
         self.capabilities = capabilities
+        self.metal4 = capabilities.metal4
+        
+        // Initialize pipeline cache (Metal 4 compilation workflow)
+        self.pipelineCache = PipelineCache(device: device, metal4: metal4)
         
         setupView()
         setupBuffers()
         setupPipeline()
         setupDepthStencil()
         
-        // Initialize MetalFX if available
+        // Initialize MetalFX if available (Metal 4 path when supported)
         if capabilities.hasMetalFX {
-            metalFXUpscaler = MetalFXUpscaler(device: device, view: view)
+            metalFXUpscaler = MetalFXUpscaler(device: device, view: view, metal4: metal4)
         }
         
-        // Initialize post-processor
-        postProcessor = PostProcessor(device: device)
+        // Initialize post-processor (Metal 4 path when supported)
+        postProcessor = PostProcessor(device: device, metal4: metal4, pipelineCache: pipelineCache)
         
         // Initialize track (Silverstone)
         track = Track(device: device, length: 5891.0) // Silverstone GP length
@@ -92,6 +101,11 @@ class MetalRenderer {
     
     func setRayTracingRenderer(_ renderer: RayTracingRenderer) {
         self.rayTracingRenderer = renderer
+    }
+    
+    /// Warmup all shaders (called at startup to eliminate runtime compilation stutter)
+    func warmupShaders() {
+        pipelineCache.warmupShaders()
     }
     
     private func setupView() {
@@ -144,10 +158,14 @@ class MetalRenderer {
         pipelineDescriptor.depthAttachmentPixelFormat = view.depthStencilPixelFormat
         pipelineDescriptor.sampleCount = view.sampleCount
         
-        do {
-            renderPipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-        } catch {
-            fatalError("Failed to create render pipeline: \(error)")
+        // Use pipeline cache (Metal 4 compiler path when available)
+        renderPipelineState = pipelineCache.createRenderPipelineState(
+            descriptor: pipelineDescriptor,
+            name: "main_pbr"
+        )
+        
+        if renderPipelineState == nil {
+            fatalError("Failed to create render pipeline")
         }
     }
     
@@ -256,12 +274,25 @@ class MetalRenderer {
             }
         }
         
-        // Ray tracing pass (if enabled)
-        if let rayTracingRenderer = rayTracingRenderer, capabilities.hasRayTracing {
+        // Ray tracing pass (if enabled) - tiered system with adaptive quality
+        if let rayTracingRenderer = rayTracingRenderer {
+            // Get render target texture
+            guard let renderTarget = renderPassDescriptor.colorAttachments[0].texture,
+                  let depthTex = renderPassDescriptor.depthAttachment.texture else {
+                return
+            }
+            
+            // Get recommended quality based on performance
+            let recommendedQuality = HardwareDetector.shared.getRecommendedQuality()
+            
             rayTracingRenderer.renderReflections(
                 commandBuffer: commandBuffer,
                 renderEncoder: renderEncoder,
-                uniforms: getCurrentUniforms()
+                uniforms: getCurrentUniforms(),
+                renderTarget: renderTarget,
+                depthTexture: depthTex,
+                normalTexture: nil, // TODO: Add normal texture rendering
+                renderQuality: recommendedQuality
             )
         }
         

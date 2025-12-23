@@ -54,12 +54,22 @@ class MetalEngine {
     
     /// Initialize rendering with Metal view
     func initialize(metalView: MTKView) {
-        // Create renderer
+        // Create renderer (will initialize pipeline cache)
         self.renderer = MetalRenderer(device: device, view: metalView, capabilities: capabilities)
         
-        // Create ray tracing renderer if supported
+        // Warmup all shaders upfront (eliminates runtime compilation stutter)
+        // This is critical for Metal 4 compilation workflow
+        if let renderer = renderer {
+            renderer.warmupShaders()
+        }
+        
+        // Create ray tracing renderer if supported (Metal 4 path when available)
         if capabilities.hasRayTracing {
-            self.rayTracingRenderer = RayTracingRenderer(device: device, capabilities: capabilities)
+            self.rayTracingRenderer = RayTracingRenderer(
+                device: device,
+                capabilities: capabilities,
+                metal4: capabilities.metal4
+            )
             renderer?.setRayTracingRenderer(rayTracingRenderer!)
         }
         
@@ -132,6 +142,13 @@ class MetalEngine {
             frameIndex: frameIndex,
             game: racingGame
         )
+        
+        // Adaptive quality adjustment for ray tracing (based on frame timing)
+        if let rayTracingRenderer = rayTracingRenderer {
+            let currentFPS = getFPS()
+            rayTracingRenderer.adjustQuality(targetFPS: 60.0, currentFPS: currentFPS)
+            rayTracingRenderer.disableIfNeeded(currentFPS: currentFPS, minAcceptableFPS: 30.0)
+        }
         
         // Present
         if let drawable = view.currentDrawable {

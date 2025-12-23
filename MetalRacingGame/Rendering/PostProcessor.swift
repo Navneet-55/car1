@@ -12,6 +12,8 @@ import simd
 /// Post-processing effects pipeline
 class PostProcessor {
     private let device: MTLDevice
+    private let metal4: Metal4FeatureLayer
+    private let pipelineCache: PipelineCache
     private var motionBlurPipeline: MTLComputePipelineState?
     private var bloomPipeline: MTLComputePipelineState?
     private var toneMapPipeline: MTLComputePipelineState?
@@ -26,39 +28,29 @@ class PostProcessor {
     var bloomEnabled: Bool = true
     var bloomIntensity: Float = 0.3
     
-    init(device: MTLDevice) {
+    init(device: MTLDevice, metal4: Metal4FeatureLayer, pipelineCache: PipelineCache) {
         self.device = device
+        self.metal4 = metal4
+        self.pipelineCache = pipelineCache
         setupPipelines()
     }
     
     private func setupPipelines() {
         guard let library = device.makeDefaultLibrary() else { return }
         
-        // Motion blur
+        // Motion blur (use pipeline cache - Metal 4 compiler path when available)
         if let function = library.makeFunction(name: "motion_blur") {
-            do {
-                motionBlurPipeline = try device.makeComputePipelineState(function: function)
-            } catch {
-                print("Failed to create motion blur pipeline: \(error)")
-            }
+            motionBlurPipeline = pipelineCache.createComputePipelineState(function: function, name: "motion_blur")
         }
         
-        // Bloom
+        // Bloom (use pipeline cache)
         if let function = library.makeFunction(name: "bloom") {
-            do {
-                bloomPipeline = try device.makeComputePipelineState(function: function)
-            } catch {
-                print("Failed to create bloom pipeline: \(error)")
-            }
+            bloomPipeline = pipelineCache.createComputePipelineState(function: function, name: "bloom")
         }
         
-        // Tone mapping
+        // Tone mapping (use pipeline cache)
         if let function = library.makeFunction(name: "tone_map") {
-            do {
-                toneMapPipeline = try device.makeComputePipelineState(function: function)
-            } catch {
-                print("Failed to create tone map pipeline: \(error)")
-            }
+            toneMapPipeline = pipelineCache.createComputePipelineState(function: function, name: "tone_map")
         }
     }
     

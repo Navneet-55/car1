@@ -261,3 +261,94 @@ struct Particle {
     float size;
 };
 
+// Ray tracing compute shader (hardware RT or compute fallback)
+kernel void ray_tracing_compute(texture2d<float, access::read_write> renderTarget [[texture(0)]],
+                                 texture2d<float, access::read> depth [[texture(1)]],
+                                 texture2d<float, access::read> normal [[texture(2)]],
+                                 texture2d<float, access::write> output [[texture(3)]],
+                                 constant RayTracingParams& params [[buffer(0)]],
+                                 uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= output.get_width() || gid.y >= output.get_height()) {
+        return;
+    }
+    
+    float2 uv = float2(gid) / float2(output.get_width(), output.get_height());
+    float depthValue = depth.read(gid).r;
+    float3 normalValue = normal.read(gid).rgb;
+    
+    // Simple ray tracing for reflections (placeholder)
+    // In a real implementation, this would use MTLAccelerationStructure for hardware RT
+    float3 viewDir = normalize(params.cameraPosition - float3(uv * 2.0 - 1.0, depthValue));
+    float3 reflectDir = reflect(-viewDir, normalValue);
+    
+    // Sample reflections (simplified)
+    float3 reflectionColor = float3(0.1, 0.1, 0.15); // Sky color
+    
+    // Combine with original
+    float4 original = renderTarget.read(gid);
+    float3 finalColor = mix(original.rgb, reflectionColor, 0.3);
+    
+    output.write(float4(finalColor, original.a), gid);
+}
+
+// Ray tracing parameters
+struct RayTracingParams {
+    int32_t samplesPerPixel;
+    int32_t maxBounces;
+    float reflectionDistance;
+    float3 cameraPosition;
+    float4x4 viewMatrix;
+    float4x4 projectionMatrix;
+};
+
+// Ray tracing denoising kernel (Metal 4 path when available)
+kernel void ray_tracing_denoise(texture2d<float, access::read> noisyInput [[texture(0)]],
+                                 texture2d<float, access::write> denoisedOutput [[texture(1)]],
+                                 uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= denoisedOutput.get_width() || gid.y >= denoisedOutput.get_height()) {
+        return;
+    }
+    
+    // Simple temporal/spatial denoising (box filter for now)
+    // In a real implementation, this would use more sophisticated denoising
+    float4 result = float4(0.0);
+    int sampleCount = 0;
+    
+    for (int y = -1; y <= 1; ++y) {
+        for (int x = -1; x <= 1; ++x) {
+            uint2 samplePos = uint2(clamp(int2(gid) + int2(x, y), int2(0), int2(noisyInput.get_width() - 1, noisyInput.get_height() - 1)));
+            result += noisyInput.read(samplePos);
+            sampleCount++;
+        }
+    }
+    
+    result /= float(sampleCount);
+    denoisedOutput.write(result, gid);
+}
+
+// Screen-space reflections (fallback when hardware RT not available)
+kernel void screen_space_reflections(texture2d<float, access::read_write> renderTarget [[texture(0)]],
+                                      texture2d<float, access::read> depth [[texture(1)]],
+                                      texture2d<float, access::read> normal [[texture(2)]],
+                                      uint2 gid [[thread_position_in_grid]]) {
+    if (gid.x >= renderTarget.get_width() || gid.y >= renderTarget.get_height()) {
+        return;
+    }
+    
+    float depthValue = depth.read(gid).r;
+    float3 normalValue = normal.read(gid).rgb;
+    
+    // Simple SSR implementation
+    float2 uv = float2(gid) / float2(renderTarget.get_width(), renderTarget.get_height());
+    float3 viewDir = normalize(float3(uv * 2.0 - 1.0, depthValue));
+    float3 reflectDir = reflect(-viewDir, normalValue);
+    
+    // Sample along reflection ray
+    float3 reflectionColor = float3(0.1, 0.1, 0.15);
+    
+    float4 original = renderTarget.read(gid);
+    float3 finalColor = mix(original.rgb, reflectionColor, 0.2);
+    
+    renderTarget.write(float4(finalColor, original.a), gid);
+}
+
