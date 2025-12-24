@@ -33,9 +33,36 @@ class F1Car {
     var hasWings: Bool = true
     var hasSidepods: Bool = true
     
+    // Static cache for shared geometry
+    private static var sharedVertexBuffer: MTLBuffer?
+    private static var sharedIndexBuffer: MTLBuffer?
+    private static var sharedNormalBuffer: MTLBuffer?
+    private static var sharedTexCoordBuffer: MTLBuffer?
+    private static var sharedIndexCount: Int = 0
+    
     init(device: MTLDevice) {
         self.device = device
+        
+        // Check cache first to avoid rebuilding geometry for every car
+        if let vb = F1Car.sharedVertexBuffer,
+           let ib = F1Car.sharedIndexBuffer,
+           let nb = F1Car.sharedNormalBuffer {
+            self.vertexBuffer = vb
+            self.indexBuffer = ib
+            self.normalBuffer = nb
+            self.texCoordBuffer = F1Car.sharedTexCoordBuffer
+            self.indexCount = F1Car.sharedIndexCount
+            return
+        }
+        
         buildGeometry()
+        
+        // Cache the buffers for future instances
+        F1Car.sharedVertexBuffer = self.vertexBuffer
+        F1Car.sharedIndexBuffer = self.indexBuffer
+        F1Car.sharedNormalBuffer = self.normalBuffer
+        F1Car.sharedTexCoordBuffer = self.texCoordBuffer
+        F1Car.sharedIndexCount = self.indexCount
     }
     
     /// Build complete F1 car geometry

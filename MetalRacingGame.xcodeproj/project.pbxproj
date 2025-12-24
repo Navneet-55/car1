@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		538163652EFB561B006E0CFD /* PitStopSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 538163642EFB561B006E0CFD /* PitStopSystem.swift */; };
+		538163672EFB561D006E0CFD /* DRSSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 538163662EFB561D006E0CFD /* DRSSystem.swift */; };
+		538163692EFB5621006E0CFD /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 538163682EFB5621006E0CFD /* Track.swift */; };
+		5381636B2EFB5623006E0CFD /* HUDManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5381636A2EFB5623006E0CFD /* HUDManager.swift */; };
+		5381636D2EFB5626006E0CFD /* PerformanceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5381636C2EFB5626006E0CFD /* PerformanceMonitor.swift */; };
+		5381636F2EFB562A006E0CFD /* F1Car.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5381636E2EFB562A006E0CFD /* F1Car.swift */; };
+		538163712EFB562D006E0CFD /* PipelineCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 538163702EFB562D006E0CFD /* PipelineCache.swift */; };
+		538163732EFB562F006E0CFD /* PostProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 538163722EFB562F006E0CFD /* PostProcessor.swift */; };
+		538163752EFB5631006E0CFD /* NeuralEngineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 538163742EFB5631006E0CFD /* NeuralEngineManager.swift */; };
 		AA0000010000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000001 /* AppDelegate.swift */; };
 		AA0000030000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000040000000000000001 /* ContentView.swift */; };
 		AA0000050000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000060000000000000001 /* Assets.xcassets */; };
@@ -27,6 +36,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		538163642EFB561B006E0CFD /* PitStopSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitStopSystem.swift; sourceTree = "<group>"; };
+		538163662EFB561D006E0CFD /* DRSSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DRSSystem.swift; sourceTree = "<group>"; };
+		538163682EFB5621006E0CFD /* Track.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Track.swift; sourceTree = "<group>"; };
+		5381636A2EFB5623006E0CFD /* HUDManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDManager.swift; sourceTree = "<group>"; };
+		5381636C2EFB5626006E0CFD /* PerformanceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceMonitor.swift; sourceTree = "<group>"; };
+		5381636E2EFB562A006E0CFD /* F1Car.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = F1Car.swift; sourceTree = "<group>"; };
+		538163702EFB562D006E0CFD /* PipelineCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineCache.swift; sourceTree = "<group>"; };
+		538163722EFB562F006E0CFD /* PostProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessor.swift; sourceTree = "<group>"; };
+		538163742EFB5631006E0CFD /* NeuralEngineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeuralEngineManager.swift; sourceTree = "<group>"; };
 		AA0000000000000000000001 /* MetalRacingGame.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetalRacingGame.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000020000000000000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AA0000040000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -67,14 +85,6 @@
 			);
 			sourceTree = "<group>";
 		};
-		AA0000250000000000000001 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				AA0000000000000000000001 /* MetalRacingGame.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		AA0000240000000000000001 /* MetalRacingGame */ = {
 			isa = PBXGroup;
 			children = (
@@ -90,6 +100,14 @@
 				AA0000210000000000000001 /* Info.plist */,
 			);
 			path = MetalRacingGame;
+			sourceTree = "<group>";
+		};
+		AA0000250000000000000001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000001 /* MetalRacingGame.app */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 		AA0000260000000000000001 /* Engine */ = {
@@ -128,6 +146,15 @@
 			isa = PBXGroup;
 			children = (
 				AA00000A0000000000000001 /* Shaders.metal */,
+				538163642EFB561B006E0CFD /* PitStopSystem.swift */,
+				538163662EFB561D006E0CFD /* DRSSystem.swift */,
+				538163682EFB5621006E0CFD /* Track.swift */,
+				5381636A2EFB5623006E0CFD /* HUDManager.swift */,
+				5381636C2EFB5626006E0CFD /* PerformanceMonitor.swift */,
+				5381636E2EFB562A006E0CFD /* F1Car.swift */,
+				538163702EFB562D006E0CFD /* PipelineCache.swift */,
+				538163722EFB562F006E0CFD /* PostProcessor.swift */,
+				538163742EFB5631006E0CFD /* NeuralEngineManager.swift */,
 			);
 			path = Shaders;
 			sourceTree = "<group>";
@@ -207,17 +234,26 @@
 			files = (
 				AA0000010000000000000001 /* AppDelegate.swift in Sources */,
 				AA0000030000000000000001 /* ContentView.swift in Sources */,
+				5381636B2EFB5623006E0CFD /* HUDManager.swift in Sources */,
 				AA0000090000000000000001 /* Shaders.metal in Sources */,
 				AA00000B0000000000000001 /* MetalRenderer.swift in Sources */,
 				AA00000D0000000000000001 /* MetalEngine.swift in Sources */,
+				538163712EFB562D006E0CFD /* PipelineCache.swift in Sources */,
+				538163692EFB5621006E0CFD /* Track.swift in Sources */,
 				AA00000F0000000000000001 /* HardwareDetector.swift in Sources */,
+				538163652EFB561B006E0CFD /* PitStopSystem.swift in Sources */,
 				AA0000110000000000000001 /* RayTracingRenderer.swift in Sources */,
 				AA0000130000000000000001 /* PhysicsEngine.swift in Sources */,
+				538163752EFB5631006E0CFD /* NeuralEngineManager.swift in Sources */,
 				AA0000150000000000000001 /* InputManager.swift in Sources */,
+				538163672EFB561D006E0CFD /* DRSSystem.swift in Sources */,
 				AA0000170000000000000001 /* RacingGame.swift in Sources */,
+				5381636F2EFB562A006E0CFD /* F1Car.swift in Sources */,
 				AA0000190000000000000001 /* Car.swift in Sources */,
 				AA00001B0000000000000001 /* Camera.swift in Sources */,
 				AA00001D0000000000000001 /* ParticleSystem.swift in Sources */,
+				538163732EFB562F006E0CFD /* PostProcessor.swift in Sources */,
+				5381636D2EFB5626006E0CFD /* PerformanceMonitor.swift in Sources */,
 				AA00001F0000000000000001 /* MetalFXUpscaler.swift in Sources */,
 				AA0000350000000000000001 /* MetalRacingGameApp.swift in Sources */,
 			);
@@ -405,15 +441,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA0000300000000000000001 /* Build configuration list for PBXProject "MetalRacingGame" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA0000310000000000000001 /* Debug */,
-				AA0000320000000000000001 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		AA00002C0000000000000001 /* Build configuration list for PBXNativeTarget "MetalRacingGame" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -423,8 +450,16 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AA0000300000000000000001 /* Build configuration list for PBXProject "MetalRacingGame" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000310000000000000001 /* Debug */,
+				AA0000320000000000000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 	};
 	rootObject = AA00002F0000000000000001 /* Project object */;
 }
-

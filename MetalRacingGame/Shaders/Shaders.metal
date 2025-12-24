@@ -33,6 +33,25 @@ struct Uniforms {
     float time;
 };
 
+// Particle structure for compute shader
+struct Particle {
+    float3 position;
+    float3 velocity;
+    float4 color;
+    float life;
+    float size;
+};
+
+// Ray tracing parameters
+struct RayTracingParams {
+    int32_t samplesPerPixel;
+    int32_t maxBounces;
+    float reflectionDistance;
+    float3 cameraPosition;
+    float4x4 viewMatrix;
+    float4x4 projectionMatrix;
+};
+
 // Vertex shader
 vertex VertexOut vertex_main(VertexIn in [[stage_in]],
                              constant Uniforms& uniforms [[buffer(0)]]) {
@@ -225,7 +244,7 @@ kernel void update_particles(device Particle* particles [[buffer(0)]],
                              uint id [[thread_position_in_grid]]) {
     if (id >= 10000) return;
     
-    Particle& p = particles[id];
+    device Particle& p = particles[id];
     
     if (p.life <= 0.0) return;
     
@@ -251,15 +270,6 @@ kernel void update_particles(device Particle* particles [[buffer(0)]],
     // Size variation
     p.size *= (1.0 + deltaTime * 0.1);
 }
-
-// Particle structure for compute shader
-struct Particle {
-    float3 position;
-    float3 velocity;
-    float4 color;
-    float life;
-    float size;
-};
 
 // Ray tracing compute shader (hardware RT or compute fallback)
 kernel void ray_tracing_compute(texture2d<float, access::read_write> renderTarget [[texture(0)]],
@@ -290,16 +300,6 @@ kernel void ray_tracing_compute(texture2d<float, access::read_write> renderTarge
     
     output.write(float4(finalColor, original.a), gid);
 }
-
-// Ray tracing parameters
-struct RayTracingParams {
-    int32_t samplesPerPixel;
-    int32_t maxBounces;
-    float reflectionDistance;
-    float3 cameraPosition;
-    float4x4 viewMatrix;
-    float4x4 projectionMatrix;
-};
 
 // Ray tracing denoising kernel (Metal 4 path when available)
 kernel void ray_tracing_denoise(texture2d<float, access::read> noisyInput [[texture(0)]],

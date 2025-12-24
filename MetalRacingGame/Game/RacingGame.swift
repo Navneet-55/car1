@@ -140,6 +140,9 @@ class RacingGame {
         // Update player car
         playerCar.update(input: input, physicsEngine: physicsEngine)
         
+        // Sync visual tire color with pit system
+        playerCar.setTireColor(pitStopSystem.getTireColor())
+        
         // Update camera with enhanced data (TPP only)
         let updatedCarState = playerCar.getPhysicsState()
         
@@ -179,6 +182,45 @@ class RacingGame {
         if isLapActive {
             currentLapTime = CACurrentMediaTime() - lapStartTime
         }
+    }
+    
+    /// Reset game to initial state
+    func reset() {
+        isLapActive = false
+        
+        // Reset player
+        if let player = playerCar {
+            let initialState = CarPhysicsState(
+                position: SIMD3<Float>(0, 1, 0),
+                rotation: simd_quatf(ix: 0, iy: 0, iz: 0, r: 1),
+                velocity: SIMD3<Float>(0, 0, 0),
+                angularVelocity: SIMD3<Float>(0, 0, 0)
+            )
+            physicsEngine.registerCar(id: player.id, initialState: initialState)
+            player.setTireColor(SIMD3<Float>(1.0, 0.8, 0.0)) // Reset to medium yellow
+        }
+        
+        // Reset AI
+        for (i, aiCar) in aiCars.enumerated() {
+            let initialPos = SIMD3<Float>(Float(i) * 5.0 - 5.0, 1, -10.0)
+            let initialState = CarPhysicsState(
+                position: initialPos,
+                rotation: simd_quatf(ix: 0, iy: 0, iz: 0, r: 1),
+                velocity: SIMD3<Float>(0, 0, -5.0),
+                angularVelocity: SIMD3<Float>(0, 0, 0)
+            )
+            physicsEngine.registerCar(id: aiCar.id, initialState: initialState)
+        }
+        
+        // Reset race systems
+        self.drsSystem = DRSSystem()
+        self.pitStopSystem = PitStopSystem()
+        
+        // Reset timing
+        lapStartTime = CACurrentMediaTime()
+        currentLapTime = 0
+        playerTrackDistance = 0
+        isLapActive = true
     }
     
     /// Update track position based on car position
@@ -295,12 +337,13 @@ class RacingGame {
     
     /// Calculate gear based on speed
     private func calculateGear(speed: Float) -> Int {
-        if speed < 50 { return 1 }
-        if speed < 100 { return 2 }
-        if speed < 150 { return 3 }
-        if speed < 200 { return 4 }
-        if speed < 250 { return 5 }
-        if speed < 300 { return 6 }
-        return 7
+        // Approximate gear ratios for F1 car (up to ~350 km/h)
+        let gears = [0, 60, 100, 140, 180, 230, 280, 330] // Speed thresholds
+        for i in 1..<gears.count {
+            if speed < Float(gears[i]) {
+                return i
+            }
+        }
+        return 8 // Top gear
     }
 }

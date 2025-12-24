@@ -64,5 +64,22 @@ class Car {
     func setTireColor(_ color: SIMD3<Float>) {
         self.tireColor = color
     }
+
+    // MARK: - Geometric Properties
+    
+    /// Forward direction vector
+    var forwardVector: SIMD3<Float> {
+        return physicsState.rotation.act(SIMD3<Float>(0, 0, -1))
+    }
+    
+    /// Right direction vector
+    var rightVector: SIMD3<Float> {
+        return physicsState.rotation.act(SIMD3<Float>(1, 0, 0))
+    }
+    
+    /// Up direction vector
+    var upVector: SIMD3<Float> {
+        return physicsState.rotation.act(SIMD3<Float>(0, 1, 0))
+    }
 }
 

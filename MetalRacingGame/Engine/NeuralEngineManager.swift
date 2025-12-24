@@ -23,7 +23,7 @@ class NeuralEngineManager {
     private let capabilities: NeuralEngineCapabilities
     private var isEnabled: Bool = true
     private var throttleCounter: Int = 0
-    private let throttleInterval: Int = 2 // Run every N frames
+    private var throttleInterval: Int = 2 // Run every N frames
     
     // Inference throttling
     private var lastInferenceTime: CFTimeInterval = 0
@@ -272,8 +272,7 @@ class NeuralEngineManager {
     /// Set throttle interval (for Low Battery Mode)
     func setThrottleInterval(_ interval: Int) {
         throttleCounter = 0 // Reset counter
-        // Note: throttleInterval is let, so we'd need to make it var or use a different approach
-        // For now, this is a placeholder
+        throttleInterval = max(1, interval)
     }
     
     /// Get ANE capabilities
