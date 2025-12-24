@@ -147,6 +147,15 @@ class DRSSystem {
         updateWingAnimation(deltaTime: deltaTime)
     }
     
+    /// Reset DRS system to initial state
+    func reset() {
+        state = .unavailable
+        isOpen = false
+        currentZone = nil
+        cooldownTimer = 0
+        wingAngle = 0
+    }
+    
     /// Check if DRS can be activated
     private func canActivateDRS(braking: Float, steering: Float) -> Bool {
         return braking < brakingThreshold && abs(steering) < steeringThreshold
@@ -227,4 +236,3 @@ class DRSSystem {
         return currentZone != nil && (state == .available || state == .active)
     }
 }
-

@@ -22,9 +22,8 @@ class RacingGame {
     private var hudManager: HUDManager?
     private var aneManager: NeuralEngineManager
     
-    // Race systems
-    private var drsSystem: DRSSystem
-    private var pitStopSystem: PitStopSystem
+    // Race systems manager
+    private var raceSystemsManager: RaceSystemsManager
     
     // Track position tracking
     private var playerTrackDistance: Float = 0
@@ -42,9 +41,8 @@ class RacingGame {
         self.track = track
         self.hudManager = hudManager
         
-        // Initialize race systems
-        self.drsSystem = DRSSystem()
-        self.pitStopSystem = PitStopSystem()
+        // Initialize race systems manager
+        self.raceSystemsManager = RaceSystemsManager()
         
         // Initialize Neural Engine manager
         self.aneManager = NeuralEngineManager.shared
@@ -110,45 +108,30 @@ class RacingGame {
         // Update track position
         updateTrackPosition(carState: carState, deltaTime: deltaTime)
         
-        // Update DRS system
-        drsSystem.update(
+        // Update race systems
+        raceSystemsManager.update(
             deltaTime: deltaTime,
             trackDistance: playerTrackDistance,
             speed: speed,
             braking: input.brake,
             steering: input.steering,
-            drsButtonPressed: input.drsButton
+            drsButton: input.drsButton,
+            pitButton: input.pitButton,
+            tireChangeButton: input.tireChangeButton,
+            carPosition: carState.position
         )
-        
-        // Update pit stop system
-        pitStopSystem.update(
-            deltaTime: deltaTime,
-            trackDistance: playerTrackDistance,
-            speed: speed,
-            position: carState.position,
-            pitButtonPressed: input.pitButton
-        )
-        
-        // Handle tire change input
-        if input.tireChangeButton && pitStopSystem.state == .stopped {
-            pitStopSystem.cycleCompound()
-        }
         
         // Apply race systems to physics
-        applyRaceSystemsToPhysics(input: input, deltaTime: deltaTime)
+        raceSystemsManager.applyToPhysics(physicsEngine: physicsEngine, carId: playerCar.id, carSpeed: speed)
         
         // Update player car
         playerCar.update(input: input, physicsEngine: physicsEngine, deltaTime: deltaTime)
         
         // Sync visual tire color with pit system
-        playerCar.setTireColor(pitStopSystem.getTireColor())
+        playerCar.setTireColor(raceSystemsManager.pitStopSystem.getTireColor())
         
         // Update camera with enhanced data (TPP only)
         let updatedCarState = playerCar.getPhysicsState()
-        
-        // Use ANE for predictive camera smoothing (optional, async, non-blocking)
-        // For now, camera uses standard interpolation
-        // ANE smoothing can be added later as an enhancement
         camera.update(
             targetPosition: updatedCarState.position,
             targetRotation: updatedCarState.rotation,
@@ -164,9 +147,6 @@ class RacingGame {
         // Update AI cars (throttled in Low Battery Mode)
         if updateAI {
             for aiCar in aiCars {
-                // Use ANE for AI decision optimization (optional, async, non-blocking)
-                // For now, use CPU fallback directly to avoid async complexity
-                // ANE optimization can be added later as an enhancement
                 let aiInput = generateAIInput(for: aiCar)
                 aiCar.update(input: aiInput, physicsEngine: physicsEngine, deltaTime: deltaTime)
             }
@@ -175,7 +155,6 @@ class RacingGame {
         // Update particles (throttled in Low Battery Mode)
         if updateParticles, let particleSystem = particleSystem {
             // Particle updates would go here
-            // For now, particles are updated elsewhere
         }
         
         // Update lap time
@@ -213,8 +192,7 @@ class RacingGame {
         }
         
         // Reset race systems
-        self.drsSystem = DRSSystem()
-        self.pitStopSystem = PitStopSystem()
+        raceSystemsManager.reset()
         
         // Reset timing
         lapStartTime = CACurrentMediaTime()
@@ -225,46 +203,16 @@ class RacingGame {
     
     /// Update track position based on car position
     private func updateTrackPosition(carState: CarPhysicsState, deltaTime: Float) {
-        // Simplified track position calculation
-        // In a real implementation, this would use track spline projection
         let speed = length(carState.velocity)
         playerTrackDistance += speed * deltaTime
         
-        // Wrap around track length
         if let track = track {
             playerTrackDistance = playerTrackDistance.truncatingRemainder(dividingBy: track.length)
         }
     }
     
-    /// Apply DRS and tire grip to physics
-    private func applyRaceSystemsToPhysics(input: CarInput, deltaTime: Float) {
-        guard let playerCar = playerCar else { return }
-        
-        // Get modifiers from race systems
-        let drsTopSpeedBonus = drsSystem.getTopSpeedBonus()
-        let drsDragMultiplier = drsSystem.getDragMultiplier()
-        let tireGripMultiplier = pitStopSystem.getGripMultiplier()
-        
-        // Apply speed limit if pit limiter is active
-        if let speedLimit = pitStopSystem.getSpeedLimit() {
-            let currentSpeed = playerCar.getSpeed()
-            if currentSpeed > speedLimit {
-                // Physics engine will handle speed limiting
-                physicsEngine.setSpeedLimit(carId: playerCar.id, limit: speedLimit)
-            }
-        } else {
-            physicsEngine.clearSpeedLimit(carId: playerCar.id)
-        }
-        
-        // Set physics modifiers
-        physicsEngine.setDragMultiplier(carId: playerCar.id, multiplier: drsDragMultiplier)
-        physicsEngine.setGripMultiplier(carId: playerCar.id, multiplier: tireGripMultiplier)
-    }
-    
     /// Check if car is on kerb
     private func isOnKerb(position: SIMD3<Float>) -> Bool {
-        // Simplified kerb detection - check if near track edges
-        // Real implementation would use track geometry
         return false
     }
     
@@ -275,20 +223,8 @@ class RacingGame {
         let gear = calculateGear(speed: speed)
         hudManager.update(speed: speed, gear: gear)
         
-        // Update DRS state
-        hudManager.updateDRS(
-            available: drsSystem.isDRSAvailable(),
-            active: drsSystem.isDRSActive()
-        )
-        
-        // Update tire info
-        hudManager.updateTires(
-            compound: pitStopSystem.currentTires.compound,
-            wear: pitStopSystem.currentTires.wear
-        )
-        
-        // Update pit limiter
-        hudManager.updatePitLimiter(active: pitStopSystem.isPitLimiterActive)
+        // Update race systems in HUD
+        raceSystemsManager.updateHUD(hudManager)
         
         // Update lap time
         hudManager.updateLapTime(currentLapTime)
@@ -297,11 +233,8 @@ class RacingGame {
     /// Generate AI input for autonomous cars
     private func generateAIInput(for car: Car) -> CarInput {
         var input = CarInput()
-        
-        // Simple AI: always throttle and steer toward track
         input.throttle = 0.8
         input.steering = Float.random(in: -0.2...0.2)
-        
         return input
     }
     
@@ -325,25 +258,19 @@ class RacingGame {
         return cars
     }
     
-    /// Get DRS system for rendering
-    func getDRSSystem() -> DRSSystem {
-        return drsSystem
-    }
-    
-    /// Get pit stop system
-    func getPitStopSystem() -> PitStopSystem {
-        return pitStopSystem
+    /// Get race systems manager
+    func getRaceSystemsManager() -> RaceSystemsManager {
+        return raceSystemsManager
     }
     
     /// Calculate gear based on speed
     private func calculateGear(speed: Float) -> Int {
-        // Approximate gear ratios for F1 car (up to ~350 km/h)
-        let gears = [0, 60, 100, 140, 180, 230, 280, 330] // Speed thresholds
+        let gears = [0, 60, 100, 140, 180, 230, 280, 330]
         for i in 1..<gears.count {
             if speed < Float(gears[i]) {
                 return i
             }
         }
-        return 8 // Top gear
+        return 8
     }
 }
