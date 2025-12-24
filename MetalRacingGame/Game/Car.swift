@@ -31,9 +31,9 @@ class Car {
     }
     
     /// Update car with input
-    func update(input: CarInput, physicsEngine: PhysicsEngine) {
+    func update(input: CarInput, physicsEngine: PhysicsEngine, deltaTime: Float) {
         self.input = input
-        physicsEngine.applyInput(carId: id, input: input)
+        physicsEngine.applyInput(carId: id, input: input, deltaTime: deltaTime)
         
         if let newState = physicsEngine.getCarState(id: id) {
             physicsState = newState
