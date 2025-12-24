@@ -138,7 +138,7 @@ class RacingGame {
         applyRaceSystemsToPhysics(input: input, deltaTime: deltaTime)
         
         // Update player car
-        playerCar.update(input: input, physicsEngine: physicsEngine)
+        playerCar.update(input: input, physicsEngine: physicsEngine, deltaTime: deltaTime)
         
         // Sync visual tire color with pit system
         playerCar.setTireColor(pitStopSystem.getTireColor())
@@ -168,7 +168,7 @@ class RacingGame {
                 // For now, use CPU fallback directly to avoid async complexity
                 // ANE optimization can be added later as an enhancement
                 let aiInput = generateAIInput(for: aiCar)
-                aiCar.update(input: aiInput, physicsEngine: physicsEngine)
+                aiCar.update(input: aiInput, physicsEngine: physicsEngine, deltaTime: deltaTime)
             }
         }
         
