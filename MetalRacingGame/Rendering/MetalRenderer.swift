@@ -56,6 +56,9 @@ class MetalRenderer {
     private let maxFramesInFlight = 3
     private var lastFrameTime: CFTimeInterval = 0
     
+    // Performance monitoring
+    let performanceMonitor: PerformanceMonitor
+    
     // Uniforms
     struct Uniforms {
         var viewMatrix: float4x4
@@ -72,6 +75,10 @@ class MetalRenderer {
         self.view = view
         self.capabilities = capabilities
         self.metal4 = capabilities.metal4
+        
+        // Initialize performance monitor
+        self.performanceMonitor = PerformanceMonitor()
+        performanceMonitor.setHardwareInfo(capabilities.hardwareName)
         
         // Initialize pipeline cache (Metal 4 compilation workflow)
         self.pipelineCache = PipelineCache(device: device, metal4: metal4)
@@ -191,6 +198,13 @@ class MetalRenderer {
     }
     
     func render(commandBuffer: MTLCommandBuffer, frameIndex: Int, game: RacingGame?) {
+        let currentTime = CACurrentMediaTime()
+        let deltaTime = (lastFrameTime == 0) ? (1.0 / 60.0) : (currentTime - lastFrameTime)
+        lastFrameTime = currentTime
+        
+        // Update performance monitor
+        performanceMonitor.update(frameTime: deltaTime, gpuTime: commandBuffer.gpuStartTime - commandBuffer.cpuStartTime)
+        
         self.frameIndex = frameIndex
         
         guard let renderPassDescriptor = view.currentRenderPassDescriptor,
@@ -217,6 +231,9 @@ class MetalRenderer {
             renderEncoder.setFragmentBuffer(uniformBuffer, offset: uniformOffset, index: 0)
         }
         
+        var drawCalls = 0
+        var triangles = 0
+        
         // Render track with track material
         if let track = track,
            let trackVertexBuffer = track.getVertexBuffer(),
@@ -232,6 +249,8 @@ class MetalRenderer {
                 indexBuffer: trackIndexBuffer,
                 indexBufferOffset: 0
             )
+            drawCalls += 1
+            triangles += track.getIndexCount() / 3
         }
         
         // Render F1 cars
@@ -270,6 +289,8 @@ class MetalRenderer {
                         indexBuffer: carIndexBuffer,
                         indexBufferOffset: 0
                     )
+                    drawCalls += 1
+                    triangles += f1Car.getIndexCount() / 3
                 }
             }
         }
@@ -294,7 +315,12 @@ class MetalRenderer {
                 normalTexture: nil, // TODO: Add normal texture rendering
                 renderQuality: recommendedQuality
             )
+            drawCalls += 1 // Ray tracing counts as one draw call
         }
+        
+        // Update performance monitor with draw stats
+        performanceMonitor.setDrawCalls(drawCalls)
+        performanceMonitor.setTriangles(triangles)
         
         renderEncoder.endEncoding()
     }
@@ -444,4 +470,3 @@ extension float4x4 {
         return matrix_multiply(lhs, rhs)
     }
 }
-

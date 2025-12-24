@@ -41,12 +41,6 @@ struct ContentView: View {
                 Spacer()
             }
         }
-        .onAppear {
-            // Set hardware info
-            let detector = HardwareDetector.shared
-            let caps = detector.getCapabilities()
-            performanceMonitor.setHardwareInfo("\(caps.tier) - \(caps.gpuCoreCount) GPU cores")
-        }
     }
 }
 
@@ -66,6 +60,11 @@ struct MetalView: NSViewRepresentable {
         engine.initialize(metalView: view)
         engine.setHUDManager(hudManager)
         
+        // Get performance monitor from renderer
+        if let renderer = engine.getRenderer() {
+            context.coordinator.performanceMonitor = renderer.performanceMonitor
+        }
+        
         return view
     }
     
@@ -75,14 +74,13 @@ struct MetalView: NSViewRepresentable {
     
     func makeCoordinator() -> Coordinator {
         let coordinator = Coordinator()
-        coordinator.performanceMonitor = performanceMonitor
         coordinator.hudManager = hudManager
         return coordinator
     }
     
     class Coordinator: NSObject, MTKViewDelegate {
         private var lastFrameTime: CFTimeInterval = 0
-        weak var performanceMonitor: PerformanceMonitor?
+        var performanceMonitor: PerformanceMonitor? = nil
         weak var hudManager: HUDManager?
         
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
@@ -101,16 +99,7 @@ struct MetalView: NSViewRepresentable {
             MetalEngine.shared.update(deltaTime: clampedDelta)
             
             // Render
-            let renderStart = CACurrentMediaTime()
             MetalEngine.shared.render(in: view)
-            let renderEnd = CACurrentMediaTime()
-            
-            // Update performance metrics
-            if let monitor = performanceMonitor {
-                monitor.update(frameTime: clampedDelta, gpuTime: renderEnd - renderStart)
-                monitor.setDrawCalls(1) // Will be updated with actual count
-                monitor.setTriangles(100) // Will be updated with actual count
-            }
         }
     }
 }

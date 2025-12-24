@@ -93,6 +93,11 @@ class MetalEngine {
         print("Rendering initialized")
     }
     
+    /// Get the main renderer instance
+    func getRenderer() -> MetalRenderer? {
+        return renderer
+    }
+    
     /// Set HUD manager
     func setHUDManager(_ manager: HUDManager) {
         self.hudManager = manager
@@ -207,4 +212,3 @@ class MetalEngine {
         }
     }
 }
-
