@@ -50,20 +50,14 @@ class AdvancedPhysicsEngine {
         carStates[id] = initialState
     }
     
-    func update(deltaTime: Float) {
-        for (id, _) in carStates {
-            updateCar(id: id, deltaTime: deltaTime)
-        }
-    }
-    
-    func applyInput(carId: UUID, input: CarInput) {
+    func applyInput(carId: UUID, input: CarInput, deltaTime: Float) {
         guard var state = carStates[carId] else { return }
         
         // Calculate tire forces
         calculateTireForces(&state, input: input)
         
         // Apply forces to car
-        applyTireForces(&state, deltaTime: 0.016)
+        applyTireForces(&state, deltaTime: deltaTime)
         
         carStates[carId] = state
     }
@@ -174,6 +168,3 @@ class AdvancedPhysicsEngine {
         return Swift.max(min, Swift.min(max, value))
     }
 }
-
-
-
