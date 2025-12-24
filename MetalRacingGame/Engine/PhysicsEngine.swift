@@ -118,15 +118,15 @@ class PhysicsEngine {
     }
     
     /// Apply force to car
-    func applyForce(carId: UUID, force: SIMD3<Float>) {
+    func applyForce(carId: UUID, force: SIMD3<Float>, deltaTime: Float) {
         guard var state = carStates[carId] else { return }
         let acceleration = force / carMass
-        state.velocity += acceleration * 0.016
+        state.velocity += acceleration * deltaTime
         carStates[carId] = state
     }
     
     /// Apply input to car with realistic F1 physics
-    func applyInput(carId: UUID, input: CarInput) {
+    func applyInput(carId: UUID, input: CarInput, deltaTime: Float) {
         guard var state = carStates[carId] else { return }
         let modifiers = carModifiers[carId] ?? CarPhysicsModifiers()
         
@@ -149,12 +149,12 @@ class PhysicsEngine {
             }
         }
         
-        state.velocity += engineForce / carMass * 0.016
+        state.velocity += engineForce / carMass * deltaTime
         
         // Brake force (F1 carbon brakes)
         if speed > 0.1 {
             let brakeForce = -normalize(state.velocity) * input.brake * 15000.0
-            state.velocity += brakeForce / carMass * 0.016
+            state.velocity += brakeForce / carMass * deltaTime
         }
         
         // Steering (speed-dependent with grip modifier)
@@ -167,7 +167,7 @@ class PhysicsEngine {
         
         // Lateral grip with tire modifier
         let lateralForce = right * steeringAngle * effectiveGrip * speed * 0.5
-        state.velocity += lateralForce / carMass * 0.016
+        state.velocity += lateralForce / carMass * deltaTime
         
         // Handbrake (drift/oversteer)
         if input.handbrake {
